@@ -1,0 +1,6 @@
+fastapi==0.68.2
+uvicorn==0.15.0
+pytest==6.2.5
+fastapi[testclient]==0.68.2
+httpx==0.21.3
+requests==2.30.0
