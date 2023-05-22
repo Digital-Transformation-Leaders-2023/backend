@@ -4,3 +4,6 @@ pytest==6.2.5
 fastapi[testclient]==0.68.2
 httpx==0.21.3
 requests==2.30.0
+pandas==2.0.1
+python-multipart==0.0.6
+openpyxl==3.1.2
