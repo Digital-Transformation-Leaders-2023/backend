@@ -1,9 +1,10 @@
 version: '3.7'
 services:
-  web:
-    build: .
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8001
-    volumes:
-      - ./app:/usr/src/app/app
+  mongo:
+    image: mongo
     ports:
-      - 8001:8001
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=mydatabase
+      - MONGO_INITDB_ROOT_USERNAME=myuser
+      - MONGO_INITDB_ROOT_PASSWORD=mypassword

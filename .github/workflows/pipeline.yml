@@ -45,6 +45,8 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
+          docker-compose up -d 
+          
           cd /Digital-Transformation-Leaders-2023/backend
           docker build -t myapp2 .
           if [ "$(docker ps -q -f name=myapp2)" ]; then

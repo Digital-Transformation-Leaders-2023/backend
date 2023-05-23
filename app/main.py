@@ -3,8 +3,24 @@ from io import BytesIO
 
 from fastapi import FastAPI, File, UploadFile
 import pandas as pd
+from pymongo import MongoClient
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
+
+mongo_host = os.environ.get("MONGO_HOST", "localhost")
+mongo_port = os.environ.get("MONGO_PORT", 27017)
+mongo_user = os.environ.get("MONGO_USER", "myuser")
+mongo_password = os.environ.get("MONGO_PASSWORD", "mypassword")
+mongo_database = os.environ.get("MONGO_DATABASE", "mydatabase")
+
+mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
+
+client = MongoClient(mongo_uri)
 
 
 @app.get("/")
@@ -34,6 +50,18 @@ async def create_upload_file(file: UploadFile = File(...)):
     file_name = os.path.join('files', file.filename)
     df.to_excel(file_name, index=False)
 
+    record = df.to_dict(orient='records')
+
+    db = client[mongo_database]
+    collection = db['reports']
+
+    collection.insert_many(record)
+
     print(df)
 
     return {"filename": file.filename, "message": "File uploaded successfully"}
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    client.close()

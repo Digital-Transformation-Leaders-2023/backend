@@ -2,14 +2,7 @@
 
 ### Project setup
 ```
-docker-compose build
-
-docker-compose up
-```
-
-### Запуск с дебагом
-```
-docker-compose up -d database
+docker-compose up -d
 
 pip install -r requirements.txt
 
