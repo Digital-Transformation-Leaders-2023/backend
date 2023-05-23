@@ -1,4 +1,5 @@
 import os
+import uuid
 from io import BytesIO
 
 from fastapi import FastAPI, File, UploadFile
@@ -53,7 +54,11 @@ async def create_upload_file(file: UploadFile = File(...)):
     record = df.to_dict(orient='records')
 
     db = client[mongo_database]
-    collection = db['reports']
+
+    report_id = uuid.uuid4()
+    report_id = str(report_id)
+
+    collection = db[report_id]
 
     collection.insert_many(record)
 
@@ -61,6 +66,22 @@ async def create_upload_file(file: UploadFile = File(...)):
 
     return {"filename": file.filename, "message": "File uploaded successfully"}
 
+@app.get("/get_all_data")
+async def get_all_data():
+    db = client[mongo_database]
+
+    all_data = {}
+
+    # Получаем список всех коллекций в базе данных
+    collection_names = db.list_collection_names()
+
+    # Проходимся по всем коллекциям и получаем все документы в каждой
+    for collection_name in collection_names:
+        collection = db[collection_name]
+        data = collection.find({})
+        all_data[collection_name] = data
+
+    return all_data
 
 @app.on_event("shutdown")
 def shutdown_event():
