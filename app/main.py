@@ -8,6 +8,9 @@ from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
 
+from .database import Session, engine
+from . import models
+
 load_dotenv()
 
 app = FastAPI()
@@ -21,6 +24,15 @@ mongo_database = os.environ.get("MONGO_DATABASE", "mydatabase")
 mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
 
 client = MongoClient(mongo_uri)
+
+os.environ['DATABASE_URL'] = 'postgresql://user:password@db:5432/mydatabase'
+
+def get_db():
+    try:
+        db = Session()
+        yield db
+    finally:
+        db.close()
 
 
 @app.get("/")
