@@ -2,7 +2,7 @@
 
 ### Project setup
 ```
-docker-compose up -d
+docker-compose up mongo -d
 
 pip install -r requirements.txt
 
