@@ -10,8 +10,6 @@ import os
 import locale
 import json
 
-locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")\
-
 load_dotenv()
 
 app = FastAPI()
