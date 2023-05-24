@@ -21,6 +21,8 @@ jobs:
         target: "/Digital-Transformation-Leaders-2023/backend"
 
     - name: Build and Run Docker Image on Remote Server
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
@@ -29,4 +31,4 @@ jobs:
         script: |          
           cd /Digital-Transformation-Leaders-2023/backend
           docker-compose down --remove-orphans -v
-          docker-compose up --build -d mongo web -e DATABASE_URL=${{ secrets.DATABASE_URL }}
+          docker-compose up --build -d mongo web 
