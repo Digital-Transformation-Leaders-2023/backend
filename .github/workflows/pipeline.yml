@@ -29,4 +29,4 @@ jobs:
         script: |          
           cd /Digital-Transformation-Leaders-2023/backend
           docker-compose down --remove-orphans -v
-          docker-compose up mongo web -d
+          docker-compose up --build -d mongo web -e DATABASE_URL=${{ secrets.DATABASE_URL }}
