@@ -3,7 +3,8 @@ from app.main import app
 
 client = TestClient(app)
 
-def test_read_main():
-    response = client.get("/")
+
+def test_healthcheck():
+    response = client.get("/ok")
     assert response.status_code == 200
     assert response.json() == {"message": "Hello World"}
