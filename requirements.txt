@@ -7,8 +7,11 @@ pandas==2.0.1
 python-multipart==0.0.6
 openpyxl==3.1.2
 pymongo
-dotenv
+
 python-dotenv
-python-multipart
+
 python-jose[cryptography]
-jose
+
+sqlalchemy
+alembic
+psycopg2-binary

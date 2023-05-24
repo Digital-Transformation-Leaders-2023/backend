@@ -3,4 +3,5 @@ from app.internal.routes import user, utils, report, auth
 
 __routes__ = Routes(routers=(user.router,
                              utils.router,
-                             report.router))
+                             report.router,
+                             auth.router))

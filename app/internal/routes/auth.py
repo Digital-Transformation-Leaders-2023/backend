@@ -5,15 +5,23 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.internal.repository.user import UserRepository
+from app.internal.model.user import UserModel, UserCreate, UserResponse
+from app.pkg.authentication_provider.auth import AuthProvider
 
 SECRET_KEY = "fb7e694502a64cadab462ffe062ee5219c70f7b52fcd919ffe6974c608c43c29"
 ALGORITHM = "HS256"
 
-db = UserRepository()
-
 router = APIRouter(
     prefix='/api/v1/auth'
 )
+
+reuseable_oauth = OAuth2PasswordBearer(
+    tokenUrl="/login",
+    scheme_name="JWT"
+)
+
+db = UserRepository()
+auth_provider = AuthProvider()
 
 
 class Token(BaseModel):
@@ -34,29 +42,15 @@ class UserInDB(User):
     password_hash: str
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], depreacted="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def verify_password(plain_password, hash):
-    return pwd_context.verify(plain_password, hash)
-
-
-def get_hash(password):
-    return pwd_context.hash(password)
-
-
-def get_user(username: str):
-    if username in db:
-        user_data = db[username]
-        return UserInDB(**user_data)
-
-
 def authenticate_user(username: str, password: str):
-    user = get_user(username)
+    user = db.get_user_by_username(username)
     if not user:
         return False
-    if not verify_password(password, user.password_hash):
+    if not auth_provider.verify_password(password, user.password_hash):
         return False
     return user
 
@@ -87,38 +81,43 @@ async def get_current_user(token: str = Depends(oauth_2_scheme)):
     except JWTError:
         raise credential_exception
 
-    user = get_user(db, username=token_data.username)
+    user = db.get_user_by_username(token_data.username)
     if user is None:
         raise credential_exception
 
     return user
 
 
-async def get_current_active_user(current_user: UserInDB = Depends(get_current_user)):
-    return current_user
-
-
-@router.post("/token", response_model=Token)
-async def login_for_access_token(from_data: OAuth2PasswordRequestForm = Depends()):
+@router.post("/signin", response_model=Token)
+async def login(from_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(from_data.username, from_data.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
+
     access_token_expires = timedelta(minutes=15)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.post("/sign-up", response_model=Token)
-async def login_for_access_token(from_data: OAuth2PasswordRequestForm = Depends()):
-    db.add_user(user=User(
+@router.post("/signup", summary="Create new user", response_model=Token)
+async def create_user(from_data: UserCreate):
+    user = UserModel(
         username=from_data.username,
-        pass_hash=get_hash(from_data.password),
-    ))
+        password_hash=auth_provider.get_password_hash(from_data.password),
+        email=from_data.email
+    )
+    db.add_user(user)
+    print(db.get_user_by_username("tim").password_hash)
 
     access_token_expires = timedelta(minutes=15)
     access_token = create_access_token(
         data={"sub": from_data.username}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get('/me', summary="Get details about user", response_model=UserResponse)
+async def get_me(user: User = Depends(get_current_user)):
+    return user

@@ -2,7 +2,26 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class User:
+class UserCreate:
     username: str
-    pass_hash: str
+    password: str
+    email: str
+
+
+@dataclass(frozen=True)
+class UserSignin:
+    username: str
+    password: str
+
+
+@dataclass(frozen=True)
+class UserModel:
+    username: str
+    password_hash: str
+    email: str
+
+
+@dataclass(frozen=True)
+class UserResponse:
+    username: str
     email: str
