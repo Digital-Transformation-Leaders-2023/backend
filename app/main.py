@@ -1,13 +1,16 @@
-import os
 import uuid
 from io import BytesIO
-
+from dotenv import load_dotenv
+from bson import json_util
 from fastapi import FastAPI, File, UploadFile
-import pandas as pd
 from pymongo import MongoClient
 
+import pandas as pd
 import os
-from dotenv import load_dotenv
+import locale
+import json
+
+locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")\
 
 load_dotenv()
 
@@ -35,9 +38,9 @@ async def say_hello(name: str):
 
 
 files = {}
+db = client[mongo_database]
 
-
-@app.post("/uploadfile/")
+@app.post("/upload_file/")
 async def create_upload_file(file: UploadFile = File(...)):
     contents = await file.read()
     # transform the XLSX file to a Pandas DataFrame
@@ -53,8 +56,6 @@ async def create_upload_file(file: UploadFile = File(...)):
 
     record = df.to_dict(orient='records')
 
-    db = client[mongo_database]
-
     report_id = uuid.uuid4()
     report_id = str(report_id)
 
@@ -62,14 +63,10 @@ async def create_upload_file(file: UploadFile = File(...)):
 
     collection.insert_many(record)
 
-    print(df)
-
-    return {"filename": file.filename, "message": "File uploaded successfully"}
+    return {"filename": report_id, "message": "File uploaded successfully"}
 
 @app.get("/get_all_data")
 async def get_all_data():
-    db = client[mongo_database]
-
     all_data = {}
 
     # Получаем список всех коллекций в базе данных
@@ -78,10 +75,14 @@ async def get_all_data():
     # Проходимся по всем коллекциям и получаем все документы в каждой
     for collection_name in collection_names:
         collection = db[collection_name]
-        data = collection.find({})
-        all_data[collection_name] = data
+        all_data[collection_name] = [json.loads(json_util.dumps(doc, ensure_ascii=False))
+                                     for doc in collection.find()]
 
     return all_data
+
+@app.get("/get_by_document_id/{document_id}")
+async def get_all_data(document_id: str):
+    return json.loads(json_util.dumps(db.get_collection(document_id).find(), ensure_ascii=False))
 
 @app.on_event("shutdown")
 def shutdown_event():
