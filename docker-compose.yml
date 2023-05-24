@@ -13,14 +13,38 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=myuser
       - MONGO_INITDB_ROOT_PASSWORD=mypassword
 
+  postgres-db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_HOST: localhost
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d mydatabase -U myuser" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data:/var/lib/postgresql/data
+
   web:
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8001
     volumes:
-      - ./app:/usr/src/app/app
+      - .:/app
     ports:
       - "8001:8001"
     depends_on:
       - mongo
     environment:
       - MONGO_HOST=mongo
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydatabase
+      - POSTGRES_HOST=postgres-db
+      - POSTGRES_PORT=5432
+      - DATABASE_URL=${DATABASE_URL:-postgresql://myuser:mypassword@postgres-db:5432/mydatabase}
