@@ -43,6 +43,16 @@ async def create_upload_file(file: UploadFile = File(...)):
     contents = await file.read()
     # transform the XLSX file to a Pandas DataFrame
     df = pd.read_excel(BytesIO(contents))
+    df = df.rename(columns={
+        'ID пациента': 'patient_id',
+        'Дата оказания услуги': 'date_of_service',
+        'Дата рождения пациента': 'date_of_patient_birth',
+        'Диагноз': 'diagnosis',
+        'Должность': 'job_title',
+        'Код МКБ-10': 'MKB_code',
+        'Назначения': 'appointment',
+        'Пол пациента': 'patient_gender',
+    })
 
     # создаем директорию "files", если ее нет
     if not os.path.exists('files'):
