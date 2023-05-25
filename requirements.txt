@@ -6,5 +6,6 @@ requests==2.31.0
 pandas==2.0.1
 python-multipart==0.0.6
 openpyxl==3.1.2
+fastapi-pagination==0.12.4
 pymongo
 python-dotenv

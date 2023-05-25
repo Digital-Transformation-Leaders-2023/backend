@@ -1,4 +1,4 @@
-import uuid
+from datetime import datetime
 from io import BytesIO
 from dotenv import load_dotenv
 from bson import json_util
@@ -7,8 +7,8 @@ from pymongo import MongoClient
 
 import pandas as pd
 import os
-import locale
 import json
+import uuid
 
 load_dotenv()
 
@@ -38,6 +38,7 @@ async def say_hello(name: str):
 files = {}
 db = client[mongo_database]
 
+
 @app.post("/upload_file/")
 async def create_upload_file(file: UploadFile = File(...)):
     contents = await file.read()
@@ -62,19 +63,25 @@ async def create_upload_file(file: UploadFile = File(...)):
     file_name = os.path.join('files', file.filename)
     df.to_excel(file_name, index=False)
 
-    record = df.to_dict(orient='records')
+    records = df.to_dict(orient='records')
 
     report_id = uuid.uuid4()
     report_id = str(report_id)
-
     collection = db[report_id]
 
-    collection.insert_many(record)
+    result = {}
+    result['id'] = report_id
+    result['date'] = datetime.now()
+    result['total'] = df.shape[0]
+    result['list'] = records
+
+    collection.insert_one(result)
 
     return {"filename": report_id, "message": "File uploaded successfully"}
 
+
 @app.get("/get_all_data")
-async def get_all_data():
+async def get_all_data(limit: int = 10, skip: int = 0):
     all_data = {}
 
     # Получаем список всех коллекций в базе данных
@@ -84,14 +91,20 @@ async def get_all_data():
     for collection_name in collection_names:
         collection = db[collection_name]
         all_data[collection_name] = [json.loads(json_util.dumps(doc, ensure_ascii=False))
-                                     for doc in collection.find()]
+                                     for doc in collection.find()][skip: skip + limit]
 
     return all_data
 
+
 @app.get("/get_by_document_id/{document_id}")
-async def get_all_data(document_id: str):
-    return json.loads(json_util.dumps(db.get_collection(document_id).find(), ensure_ascii=False))
+async def get_by_document_id(document_id: str, limit: int = 10, skip: int = 0):
+    rows = json.loads(json_util.dumps(db.get_collection(document_id).find(), ensure_ascii=False))
+    for row in rows:
+        row['list'] = row['list'][:skip+limit]
+    return rows
+
 
 @app.on_event("shutdown")
 def shutdown_event():
     client.close()
+
