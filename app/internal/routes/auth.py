@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.internal.repository.user import UserRepository
-from app.internal.model.user import UserModel, UserCreate, UserResponse
+from app.internal.model.user import UserModel, UserCreate, UserResponse, UserSignin
 from app.pkg.authentication_provider.auth import AuthProvider
 
 SECRET_KEY = "fb7e694502a64cadab462ffe062ee5219c70f7b52fcd919ffe6974c608c43c29"
@@ -46,8 +46,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def authenticate_user(username: str, password: str):
-    user = db.get_user_by_username(username)
+def authenticate_user(email: str, password: str):
+    user = db.get_user_by_email(email)
     if not user:
         return False
     if not auth_provider.verify_password(password, user.password_hash):

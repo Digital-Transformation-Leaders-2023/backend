@@ -20,6 +20,11 @@ class UserRepository:
             result = session.query(User).filter_by(name=username).first()
             return result
 
+    def get_user_by_email(self, email: str):
+        with Session(self.__engine) as session:
+            result = session.query(User).filter_by(email=email).first()
+            return result
+
     def add_user(self, user: UserModel) -> User:
         db_user = User(email=user.email,
                        name=user.username,

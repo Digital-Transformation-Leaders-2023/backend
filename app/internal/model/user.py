@@ -10,7 +10,7 @@ class UserCreate:
 
 @dataclass(frozen=True)
 class UserSignin:
-    username: str
+    email: str
     password: str
 
 
