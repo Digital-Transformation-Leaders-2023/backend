@@ -61,7 +61,7 @@ class ReportRepository:
             collection = self.__client[collection_name]
             all_data[collection_name] = [json.loads(json_util.dumps(doc, ensure_ascii=False))
                                          for doc in collection.find()][skip: skip + limit]
-
+        all_data['total_files'] = len(self.__client.list_collection_names())
         return all_data
 
     def get_file_by_id(self, document_id: str, limit: int = 10, skip: int = 0):
