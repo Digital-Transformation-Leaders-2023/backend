@@ -12,7 +12,7 @@ SECRET_KEY = "fb7e694502a64cadab462ffe062ee5219c70f7b52fcd919ffe6974c608c43c29"
 ALGORITHM = "HS256"
 
 router = APIRouter(
-    prefix='/api/v1/auth'
+    prefix=''
 )
 
 reuseable_oauth = OAuth2PasswordBearer(
@@ -88,7 +88,7 @@ async def get_current_user(token: str = Depends(oauth_2_scheme)):
     return user
 
 
-@router.post("/signin", response_model=Token)
+@router.post("/token", response_model=Token)
 async def login(from_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(from_data.username, from_data.password)
     if not user:
@@ -98,7 +98,7 @@ async def login(from_data: OAuth2PasswordRequestForm = Depends()):
 
     access_token_expires = timedelta(minutes=15)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires)
+        data={"sub": user.name}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -110,7 +110,6 @@ async def create_user(from_data: UserCreate):
         email=from_data.email
     )
     db.add_user(user)
-    print(db.get_user_by_username("tim").password_hash)
 
     access_token_expires = timedelta(minutes=15)
     access_token = create_access_token(

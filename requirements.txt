@@ -7,11 +7,9 @@ pandas==2.0.1
 python-multipart==0.0.6
 openpyxl==3.1.2
 pymongo
-
 python-dotenv
-
 python-jose[cryptography]
-
 sqlalchemy
 alembic
 psycopg2-binary
+passlib[bcrypt]
