@@ -71,6 +71,7 @@ class ReportRepository:
         result['records'] = all_data  # Присваиваем список файлов полю 'records'
         result['total_files'] = total_files
         return result
+
     def get_file_by_id(self, document_id: str, limit: int = 10, skip: int = 0):
         rows = json.loads(json_util.dumps(self.__client.get_collection(document_id).find(), ensure_ascii=False))
         for row in rows:
