@@ -108,3 +108,7 @@ async def get_by_document_id(document_id: str, limit: int = 10, skip: int = 0):
 def shutdown_event():
     client.close()
 
+
+# @app.on_event("shutdown")
+# def shutdown_event():
+#     client.close()
