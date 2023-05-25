@@ -51,18 +51,28 @@ class ReportRepository:
         return report_id
 
     def get_all_files(self, limit: int = 10, skip: int = 0):
+        result = {}
         all_data = {}
 
         # Получаем список всех коллекций в базе данных
         collection_names = self.__client.list_collection_names()
+        total_files = 0  # Введем переменную для подсчета общего количества файлов
 
         # Проходимся по всем коллекциям и получаем все документы в каждой
         for collection_name in collection_names:
             collection = self.__client[collection_name]
-            all_data[collection_name] = [json.loads(json_util.dumps(doc, ensure_ascii=False))
-                                         for doc in collection.find()][skip: skip + limit]
-        all_data['total_files'] = len(self.__client.list_collection_names())
-        return all_data
+            files_in_collection = [json.loads(json_util.dumps(doc, ensure_ascii=False))
+                                   for doc in collection.find()][skip: skip + limit]
+
+            if files_in_collection:  # Если в коллекции есть файлы
+                # Проверка на случай, если в коллекции только один файл
+                all_data[collection_name] = files_in_collection[0] if len(
+                    files_in_collection) == 1 else files_in_collection
+                total_files += len(files_in_collection)  # Увеличиваем общее количество файлов
+
+        result['records'] = [all_data] if all_data else []  # Если нет данных, возвращаем пустой список
+        result['total_files'] = total_files
+        return result
 
     def get_file_by_id(self, document_id: str, limit: int = 10, skip: int = 0):
         rows = json.loads(json_util.dumps(self.__client.get_collection(document_id).find(), ensure_ascii=False))
