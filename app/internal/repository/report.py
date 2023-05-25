@@ -44,6 +44,7 @@ class ReportRepository:
         result['date'] = datetime.now()
         result['total'] = data_frame.shape[0]
         result['list'] = records
+        result['is_favorite'] = False
 
         collection.insert_one(result)
 
@@ -68,3 +69,9 @@ class ReportRepository:
         for row in rows:
             row['list'] = row['list'][:skip + limit]
         return rows
+
+    def set_favorite_by_file_id(self, document_id: str, is_favorite: bool):
+        document = self.__client.get_collection(document_id)
+        query = {"id": document_id}
+        new_values = {"$set": {"is_favorite": is_favorite}}
+        return document.update_one(query, new_values)
