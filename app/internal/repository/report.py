@@ -50,9 +50,9 @@ class ReportRepository:
 
         return report_id
 
-    def get_all_files(self, limit: int = 10, skip: int = 0):
+    def get_all_files(self, limit: int = 10, skip: int = 0, is_favorite: bool = False):
         result = {}
-        all_data = []
+        table_rows = []
 
         # Получаем список всех коллекций в базе данных
         collection_names = self.__client.list_collection_names()
@@ -65,11 +65,17 @@ class ReportRepository:
                                    for doc in collection.find()][skip: skip + limit]
 
             if files_in_collection:  # Если в коллекции есть файлы
-                all_data.extend(files_in_collection)  # Добавляем файлы напрямую в список
+                table_rows.extend(files_in_collection)  # Добавляем файлы напрямую в список
                 total_files += len(files_in_collection)  # Увеличиваем общее количество файлов
 
-        result['records'] = all_data  # Присваиваем список файлов полю 'records'
+        filtered_rows = []
+        for row in table_rows:
+            if row['is_favorite'] != is_favorite:
+                filtered_rows.append(row)
+
+        result['records'] = filtered_rows  # Присваиваем список файлов полю 'records'
         result['total_files'] = total_files
+
         return result
 
     def get_file_by_id(self, document_id: str, limit: int = 10, skip: int = 0):

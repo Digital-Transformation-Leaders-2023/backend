@@ -20,8 +20,8 @@ async def create_upload_file(file: UploadFile = File(...)):
 
 
 @router.get('/get_all_files')
-async def get_all_files(limit: int = 10, skip: int = 0):
-    return report_repository.get_all_files(limit, skip)
+async def get_all_files(limit: int = 10, skip: int = 0, is_favorite: bool = False):
+    return report_repository.get_all_files(limit, skip, is_favorite)
 
 
 @router.get("/get_by_document_id/{document_id}")
