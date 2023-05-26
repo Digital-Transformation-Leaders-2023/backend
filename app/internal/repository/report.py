@@ -68,7 +68,7 @@ class ReportRepository:
 
         filtered_rows = []
         for row in table_rows:
-            if row['is_favorite'] != is_favorite:
+            if row['is_favorite'] == is_favorite:
                 filtered_rows.append(row)
 
         result['reports'] = filtered_rows  # Присваиваем список файлов полю 'records'
