@@ -71,7 +71,7 @@ class ReportRepository:
             if row['is_favorite'] != is_favorite:
                 filtered_rows.append(row)
 
-        result['records'] = filtered_rows  # Присваиваем список файлов полю 'records'
+        result['reports'] = filtered_rows  # Присваиваем список файлов полю 'records'
         result['total_files'] = len(files_in_collection)
 
         return result
