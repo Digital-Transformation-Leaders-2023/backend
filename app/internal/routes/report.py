@@ -28,11 +28,9 @@ async def get_all_files(limit: int = 10, skip: int = 0, is_favorite: bool = Fals
 @router.get("/get_by_document_id/{document_id}")
 async def get_by_document_id(
         document_id: str,
-        limit: int = 10,
-        skip: int = 0,
         report_filter: ReportFilter = Depends(ReportFilter)
 ):
-    return report_repository.get_file_by_id(document_id, limit, skip)
+    return report_repository.get_file_by_id(document_id, report_filter)
 
 
 @router.post("/set_favorite_by_file_id/{document_id}")

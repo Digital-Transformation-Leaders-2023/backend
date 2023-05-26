@@ -4,6 +4,7 @@ import uuid
 
 from datetime import datetime
 from pymongo.errors import ConnectionFailure
+from app.internal.model.report_filter import ReportFilter
 
 from bson import json_util
 from pandas import DataFrame
@@ -75,12 +76,13 @@ class ReportRepository:
 
         return result
 
-    def get_file_by_id(self, document_id: str, limit: int = 10, skip: int = 0):
+    def get_file_by_id(self, document_id: str, report_filter: ReportFilter):
         rows = json.loads(json_util.dumps(
             self.__report_collection.find_one({'id': document_id}),
             ensure_ascii=False
         ))
-        rows['list'] = rows['list'][:skip + limit]
+        rows['list'] = rows['list'][{}]
+        rows['list'] = rows['list'][:report_filter.skip + report_filter.limit]
         return rows
 
     def set_favorite_by_file_id(self, document_id: str, is_favorite: bool):
