@@ -1,6 +1,7 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Depends
 from io import BytesIO
 from app.internal.repository.report import ReportRepository
+from app.internal.model.report_filter import ReportFilter
 
 import pandas as pd
 
@@ -25,11 +26,16 @@ async def get_all_files(limit: int = 10, skip: int = 0, is_favorite: bool = Fals
 
 
 @router.get("/get_by_document_id/{document_id}")
-async def get_by_document_id(document_id: str, limit: int = 10, skip: int = 0):
+async def get_by_document_id(
+        document_id: str,
+        limit: int = 10,
+        skip: int = 0,
+        report_filter: ReportFilter = Depends(ReportFilter)
+):
     return report_repository.get_file_by_id(document_id, limit, skip)
 
 
-@router.post("set_favorite_by_file_id/{document_id}")
+@router.post("/set_favorite_by_file_id/{document_id}")
 async def set_favorite_by_file_id(document_id: str, is_favorite: bool):
     report_repository.set_favorite_by_file_id(document_id, is_favorite)
     return {"file_id": document_id, "message": "Success, is_favorite field correctly changed"}

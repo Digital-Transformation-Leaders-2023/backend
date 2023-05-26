@@ -1,17 +1,22 @@
 import json
 import os
 import uuid
+
 from datetime import datetime
+from pymongo.errors import ConnectionFailure
 
 from bson import json_util
 from pandas import DataFrame
 
 from app.internal.repository import mongo_db_client
 
+database_name = "reports"
+
 
 class ReportRepository:
     def __init__(self):
         self.__client = mongo_db_client
+        self.__report_collection = self.__client["report_collection"]
 
     def create_upload_file(self, data_frame: DataFrame, file_name: str):
         data_frame = data_frame.rename(columns={
@@ -37,7 +42,6 @@ class ReportRepository:
 
         report_id = uuid.uuid4()
         report_id = str(report_id)
-        collection = self.__client[report_id]
 
         result = {}
         result['id'] = report_id
@@ -46,7 +50,7 @@ class ReportRepository:
         result['list'] = records
         result['is_favorite'] = False
 
-        collection.insert_one(result)
+        self.__report_collection.insert_one(result)
 
         return report_id
 
@@ -54,19 +58,12 @@ class ReportRepository:
         result = {}
         table_rows = []
 
-        # Получаем список всех коллекций в базе данных
-        collection_names = self.__client.list_collection_names()
-        total_files = 0  # Введем переменную для подсчета общего количества файлов
+        collection = self.__report_collection
+        files_in_collection = [json.loads(json_util.dumps(doc, ensure_ascii=False))
+                               for doc in collection.find()][skip: skip + limit]
 
-        # Проходимся по всем коллекциям и получаем все документы в каждой
-        for collection_name in collection_names:
-            collection = self.__client[collection_name]
-            files_in_collection = [json.loads(json_util.dumps(doc, ensure_ascii=False))
-                                   for doc in collection.find()][skip: skip + limit]
-
-            if files_in_collection:  # Если в коллекции есть файлы
-                table_rows.extend(files_in_collection)  # Добавляем файлы напрямую в список
-                total_files += len(files_in_collection)  # Увеличиваем общее количество файлов
+        if files_in_collection:  # Если в коллекции есть файлы
+            table_rows.extend(files_in_collection)  # Добавляем файлы напрямую в список
 
         filtered_rows = []
         for row in table_rows:
@@ -74,18 +71,19 @@ class ReportRepository:
                 filtered_rows.append(row)
 
         result['records'] = filtered_rows  # Присваиваем список файлов полю 'records'
-        result['total_files'] = total_files
+        result['total_files'] = len(files_in_collection)
 
         return result
 
     def get_file_by_id(self, document_id: str, limit: int = 10, skip: int = 0):
-        rows = json.loads(json_util.dumps(self.__client.get_collection(document_id).find(), ensure_ascii=False))
-        for row in rows:
-            row['list'] = row['list'][:skip + limit]
+        rows = json.loads(json_util.dumps(
+            self.__report_collection.find_one({'id': document_id}),
+            ensure_ascii=False
+        ))
+        rows['list'] = rows['list'][:skip + limit]
         return rows
 
     def set_favorite_by_file_id(self, document_id: str, is_favorite: bool):
-        document = self.__client.get_collection(document_id)
         query = {"id": document_id}
         new_values = {"$set": {"is_favorite": is_favorite}}
-        return document.update_one(query, new_values)
+        return self.__report_collection.update_one(query, new_values)
