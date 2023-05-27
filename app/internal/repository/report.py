@@ -1,23 +1,33 @@
+import csv
 import json
 import os
 import uuid
 
 from datetime import datetime
 from pymongo.errors import ConnectionFailure
+from sqlalchemy.orm import Session
+
+from app.database.entities.mkb_table import MKBTable
+from app.database.entities.service_code_table import ServiceCodeTable
 from app.internal.model.report_filter import ReportFilter
 
 from bson import json_util
 from pandas import DataFrame
 
-from app.internal.repository import mongo_db_client
+from app.internal.repository import mongo_db_client, engine
 
 database_name = "reports"
+
+
+def reader_simplify(file_data: bytes, fieldnames: [str]):
+    return csv.DictReader(file_data.decode().splitlines(), delimiter=',', fieldnames=fieldnames)
 
 
 class ReportRepository:
     def __init__(self):
         self.__client = mongo_db_client
         self.__report_collection = self.__client["report_collection"]
+        self.__engine = engine
 
     def create_upload_file(self, data_frame: DataFrame, file_name: str):
         data_frame = data_frame.rename(columns={
@@ -89,3 +99,29 @@ class ReportRepository:
         query = {"id": document_id}
         new_values = {"$set": {"is_favorite": is_favorite}}
         return self.__report_collection.update_one(query, new_values)
+
+    def insert_MKB_table(self, file_data: bytes):
+        fieldnames = ["code", "description"]
+        reader = reader_simplify(file_data, fieldnames)
+        rows = list(reader)
+        try:
+            with Session(self.__engine) as session:
+                session.bulk_insert_mappings(MKBTable, rows)
+                session.commit()
+                session.close()
+            return {"message": "MKBTable correctly add in base"}
+        except Exception as error:
+            raise error
+
+    def insert_service_code_table(self, file_data: bytes):
+        fieldnames = ["code", "description"]
+        reader = reader_simplify(file_data, fieldnames)
+        rows = list(reader)
+        try:
+            with Session(self.__engine) as session:
+                session.bulk_insert_mappings(ServiceCodeTable, rows)
+                session.commit()
+                session.close()
+            return {"message": "MKBTable correctly add in base"}
+        except Exception as error:
+            raise error
