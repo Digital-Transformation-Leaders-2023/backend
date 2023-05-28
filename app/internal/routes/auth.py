@@ -135,4 +135,7 @@ async def create_user(from_data: UserCreate):
 
 @router.get('/me', summary="Get details about user", response_model=UserResponse)
 async def get_me(user: User = Depends(get_current_user)):
-    return user
+    return {
+        "username": user.username,
+        "email": user.email,
+    }
