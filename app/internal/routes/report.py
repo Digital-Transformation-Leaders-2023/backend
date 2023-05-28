@@ -1,8 +1,9 @@
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Query
 from io import BytesIO
 from app.internal.repository.report import ReportRepository
 from app.internal.model.report_filter import ReportFilter
 from typing import Optional
+from typing import List
 
 import pandas as pd
 
@@ -33,14 +34,23 @@ async def get_all_files(
 @router.get("/get_by_document_id/{document_id}")
 async def get_by_document_id(
         document_id: str,
-        skip: int,
-        limit: int,
+        skip: int = 1,
+        limit: int = 100,
+        min_age: Optional[int] = None,
+        max_age: Optional[int] = None,
+        sex: Optional[str] = None,  # male female
+        mkb_code: Optional[str] = None,
         sort_dir: Optional[str] = None,
         sort_column: Optional[str] = None,
 ):
+    skip -= 1
     return report_repository.get_file_by_id(document_id, ReportFilter(
         limit=limit,
         skip=skip,
+        min_age=min_age,
+        max_age=max_age,
+        sex=sex,
+        mkb_code=mkb_code,
     ))
 
 
