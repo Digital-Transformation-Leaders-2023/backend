@@ -8,7 +8,7 @@ class ReportFilter:
     skip: int = 1
     min_age: Optional[int] = None
     max_age: Optional[int] = None
-    sex: Optional[str] = None  # male female
+    sex: Optional[str] = None
     mkb_code: Optional[str] = None
     sort_dir: Optional[str] = None
     sort_column: Optional[str] = None

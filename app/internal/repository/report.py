@@ -12,6 +12,8 @@ from app.internal.model.report_filter import ReportFilter
 from bson import json_util
 from pandas import DataFrame
 
+import random
+
 from datetime import date
 
 from app.internal.repository import mongo_db_client, engine
@@ -60,6 +62,9 @@ class ReportRepository:
         result['total'] = data_frame.shape[0]
         result['list'] = records
         result['is_favorite'] = False
+
+        for item in result['list']:
+            item['accuracy'] = random.random()
 
         self.__report_collection.insert_one(result)
 
