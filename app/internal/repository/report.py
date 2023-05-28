@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from app.pkg.database.models import MKBTable, ServiceCodeTable
+from app.pkg.database.models import MKBTable, ServiceCodeTable, TreatmentCourse
 from app.internal.model.report_filter import ReportFilter
 from app.internal.repository.mkb import MkbRepository
 
@@ -187,5 +187,22 @@ class ReportRepository:
                 session.commit()
                 session.close()
             return {"message": "ServiceCode correctly add in base"}
+        except Exception as error:
+            raise error
+
+    def insert_treatment_course_table(self, file_data: bytes):
+        fieldnames = ["code", "description"]
+        reader = reader_simplify(
+            file_data=file_data,
+            fieldnames=fieldnames,
+            sep=','
+        )
+        rows = list(reader)
+        try:
+            with Session(self.__engine) as session:
+                session.bulk_insert_mappings(TreatmentCourse, rows)
+                session.commit()
+                session.close()
+            return {"message": "TreatmentCourse correctly add in base"}
         except Exception as error:
             raise error

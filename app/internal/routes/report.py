@@ -68,6 +68,12 @@ async def insert_MKB_table(file: UploadFile = File(...)):
 
 
 @router.post("/upload_service_code_table/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_service_code_table(file: UploadFile = File(...)):
     contents = await file.read()
     return report_repository.insert_service_code_table(contents)
+
+
+@router.post("/upload_treatment_course_table/")
+async def insert_treatment_course_table(file: UploadFile = File(...)):
+    contents = await file.read()
+    return report_repository.insert_treatment_course_table(contents)
