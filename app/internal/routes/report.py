@@ -37,3 +37,15 @@ async def get_by_document_id(
 async def set_favorite_by_file_id(document_id: str, is_favorite: bool):
     report_repository.set_favorite_by_file_id(document_id, is_favorite)
     return {"file_id": document_id, "message": "Success, is_favorite field correctly changed"}
+
+
+@router.post("/upload_mkb_table/")
+async def insert_MKB_table(file: UploadFile = File(...)):
+    contents = await file.read()
+    return report_repository.insert_MKB_table(contents)
+
+
+@router.post("/upload_service_code_table/")
+async def upload_file(file: UploadFile = File(...)):
+    contents = await file.read()
+    return report_repository.insert_service_code_table(contents)
