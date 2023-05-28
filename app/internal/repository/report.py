@@ -12,6 +12,8 @@ from app.internal.model.report_filter import ReportFilter
 from bson import json_util
 from pandas import DataFrame
 
+from datetime import date
+
 from app.internal.repository import mongo_db_client, engine
 
 database_name = "reports"
@@ -92,12 +94,24 @@ class ReportRepository:
 
         return result
 
+    @staticmethod
+    def __predicate(key, fltr: ReportFilter):
+        # age = date.today().year - date(key["date_of_patient_birth"]).year
+        if key["patient_gender"] != fltr.sex and fltr.sex is not None:
+            return False
+        if key["MKB_code"] != fltr.mkb_code and fltr.mkb_code is not None:
+            return False
+        return True
+
     def get_file_by_id(self, document_id: str, report_filter: ReportFilter):
         rows = json.loads(json_util.dumps(
             self.__report_collection.find_one({'id': document_id}),
             ensure_ascii=False
         ))
-        rows['list'] = rows['list'][:report_filter.skip + report_filter.limit]
+
+        rows['list'] = [k for k in rows['list'] if self.__predicate(k, report_filter)]
+        rows_with_limit = rows['list'][:report_filter.skip + report_filter.limit]
+
         return rows
 
     def set_favorite_by_file_id(self, document_id: str, is_favorite: bool):
