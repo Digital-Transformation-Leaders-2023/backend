@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.pkg.database.models import MKBTable, ServiceCodeTable
 from app.internal.model.report_filter import ReportFilter
+from app.internal.repository.mkb import MkbRepository
 
 from bson import json_util
 from pandas import DataFrame
@@ -23,6 +24,9 @@ database_name = "reports"
 
 def reader_simplify(file_data: bytes, fieldnames: [str], sep: str):
     return csv.DictReader(file_data.decode().splitlines(), delimiter=sep, fieldnames=fieldnames)
+
+
+mkb_repository = MkbRepository()
 
 
 class ReportRepository:
@@ -64,7 +68,20 @@ class ReportRepository:
         result['is_favorite'] = False
 
         for item in result['list']:
-            item['accuracy'] = random.random()
+            rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
+            item['accuracy'] = 0
+            if rsl is not None:
+                required_courses = [item2.service_code for item2 in rsl.courses]
+                # required_courses_desc = [item.description for item in required_courses]
+                for course in required_courses:
+                    if item['diagnosis'] == course.description:
+                        item['accuracy'] = course.weight
+                    else:
+                        item['accuracy'] = 0
+                print(item["MKB_code"], [item.description for item in required_courses])
+            else:
+                item['accuracy'] = 0.5
+            # item['accuracy'] = random.random()
 
         self.__report_collection.insert_one(result)
 

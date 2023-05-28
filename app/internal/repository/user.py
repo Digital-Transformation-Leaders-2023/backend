@@ -1,7 +1,6 @@
 from app.internal.model.user import UserModel
 from app.internal.repository import engine
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 from app.pkg.database.models import User
 
 
