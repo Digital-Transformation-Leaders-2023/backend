@@ -27,6 +27,8 @@ auth_provider = AuthProvider()
 EMAIL_ALREADY_REGISTERED_RESPONSE = JSONResponse(
     content={"message": "this email already registered"}, status_code=status.HTTP_409_CONFLICT
 )
+ACCESS_TOKEN_EXPIRES = timedelta(minutes=30)
+
 
 class Token(BaseModel):
     access_token: str
@@ -64,7 +66,7 @@ def create_access_token(data: dict, expires_delta: timedelta or None = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + ACCESS_TOKEN_EXPIRES
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -100,10 +102,13 @@ async def login(from_data: OAuth2PasswordRequestForm = Depends()):
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
 
-    access_token_expires = timedelta(minutes=15)
     access_token = create_access_token(
-        data={"sub": user.name}, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}
+        data={"sub": user.name}, expires_delta=ACCESS_TOKEN_EXPIRES)
+    return {
+        "expiration_time_in_minutes": ACCESS_TOKEN_EXPIRES,
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
 @router.post("/signup", summary="Create new user", response_model=Token)
@@ -118,10 +123,13 @@ async def create_user(from_data: UserCreate):
         return EMAIL_ALREADY_REGISTERED_RESPONSE
     db.add_user(user)
 
-    access_token_expires = timedelta(minutes=15)
     access_token = create_access_token(
-        data={"sub": from_data.username}, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}
+        data={"sub": from_data.username}, expires_delta=ACCESS_TOKEN_EXPIRES)
+    return {
+        "expiration_time_in_minutes": ACCESS_TOKEN_EXPIRES,
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
 @router.get('/me', summary="Get details about user", response_model=UserResponse)
