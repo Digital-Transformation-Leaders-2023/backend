@@ -4,11 +4,9 @@ import os
 import uuid
 
 from datetime import datetime
-from pymongo.errors import ConnectionFailure
 from sqlalchemy.orm import Session
 
-from app.database.entities.mkb_table import MKBTable
-from app.database.entities.service_code_table import ServiceCodeTable
+from app.pkg.database.models import MKBTable, ServiceCodeTable
 from app.internal.model.report_filter import ReportFilter
 
 from bson import json_util
@@ -19,8 +17,8 @@ from app.internal.repository import mongo_db_client, engine
 database_name = "reports"
 
 
-def reader_simplify(file_data: bytes, fieldnames: [str]):
-    return csv.DictReader(file_data.decode().splitlines(), delimiter=',', fieldnames=fieldnames)
+def reader_simplify(file_data: bytes, fieldnames: [str], sep: str):
+    return csv.DictReader(file_data.decode().splitlines(), delimiter=sep, fieldnames=fieldnames)
 
 
 class ReportRepository:
@@ -91,7 +89,6 @@ class ReportRepository:
             self.__report_collection.find_one({'id': document_id}),
             ensure_ascii=False
         ))
-        rows['list'] = rows['list'][{}]
         rows['list'] = rows['list'][:report_filter.skip + report_filter.limit]
         return rows
 
@@ -102,7 +99,11 @@ class ReportRepository:
 
     def insert_MKB_table(self, file_data: bytes):
         fieldnames = ["code", "description"]
-        reader = reader_simplify(file_data, fieldnames)
+        reader = reader_simplify(
+            file_data=file_data,
+            fieldnames=fieldnames,
+            sep=','
+        )
         rows = list(reader)
         try:
             with Session(self.__engine) as session:
@@ -115,13 +116,17 @@ class ReportRepository:
 
     def insert_service_code_table(self, file_data: bytes):
         fieldnames = ["code", "description"]
-        reader = reader_simplify(file_data, fieldnames)
+        reader = reader_simplify(
+            file_data=file_data,
+            fieldnames=fieldnames,
+            sep=';'
+        )
         rows = list(reader)
         try:
             with Session(self.__engine) as session:
                 session.bulk_insert_mappings(ServiceCodeTable, rows)
                 session.commit()
                 session.close()
-            return {"message": "MKBTable correctly add in base"}
+            return {"message": "ServiceCode correctly add in base"}
         except Exception as error:
             raise error
