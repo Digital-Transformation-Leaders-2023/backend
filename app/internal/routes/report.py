@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from io import BytesIO
 from app.internal.repository.report import ReportRepository
 from app.internal.model.report_filter import ReportFilter
+from typing import Optional
 
 import pandas as pd
 
@@ -28,9 +29,15 @@ async def get_all_files(limit: int = 10, skip: int = 0, is_favorite: bool = Fals
 @router.get("/get_by_document_id/{document_id}")
 async def get_by_document_id(
         document_id: str,
-        report_filter: ReportFilter = Depends(ReportFilter)
+        skip: int,
+        limit: int,
+        sort_dir: Optional[str],
+        sort_column: Optional[str],
 ):
-    return report_repository.get_file_by_id(document_id, report_filter)
+    return report_repository.get_file_by_id(document_id, ReportFilter(
+        limit=limit,
+        skip=skip,
+    ))
 
 
 @router.post("/set_favorite_by_file_id/{document_id}")

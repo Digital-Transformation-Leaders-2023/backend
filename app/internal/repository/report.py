@@ -63,7 +63,13 @@ class ReportRepository:
 
         return report_id
 
-    def get_all_files(self, limit: int = 10, skip: int = 0, is_favorite: bool = False):
+    def get_all_files(
+            self,
+            limit: int = 10,
+            skip: int = 0,
+            is_favorite: bool = False,
+            fiter: ReportFilter = ReportFilter()
+    ):
         result = {}
         table_rows = []
 
@@ -71,15 +77,15 @@ class ReportRepository:
         files_in_collection = [json.loads(json_util.dumps(doc, ensure_ascii=False))
                                for doc in collection.find()][skip: skip + limit]
 
-        if files_in_collection:  # Если в коллекции есть файлы
-            table_rows.extend(files_in_collection)  # Добавляем файлы напрямую в список
+        if files_in_collection:
+            table_rows.extend(files_in_collection)
 
         filtered_rows = []
-        for row in table_rows:
+        for row in files_in_collection:
             if row['is_favorite'] == is_favorite:
                 filtered_rows.append(row)
 
-        result['reports'] = filtered_rows  # Присваиваем список файлов полю 'records'
+        result['reports'] = filtered_rows
         result['total_files'] = len(files_in_collection)
 
         return result
