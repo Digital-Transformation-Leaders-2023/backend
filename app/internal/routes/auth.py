@@ -8,6 +8,7 @@ from app.internal.repository.user import UserRepository
 from app.internal.model.user import UserModel, UserCreate, UserResponse
 from app.pkg.authentication_provider.auth import AuthProvider
 from fastapi.responses import JSONResponse
+from app.pkg.database.models import User
 import json
 
 SECRET_KEY = "fb7e694502a64cadab462ffe062ee5219c70f7b52fcd919ffe6974c608c43c29"
@@ -39,15 +40,6 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str or None = None
-
-
-class User(BaseModel):
-    username: str
-    email: str or None = None
-
-
-class UserInDB(User):
-    password_hash: str
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -136,7 +128,6 @@ async def create_user(from_data: UserCreate):
 
 @router.get('/me', summary="Get details about user", response_model=UserResponse)
 async def get_me(user: User = Depends(get_current_user)):
-    print(json.dumps(user.__dict__))
     return {
         "username": user.user,
         "email": user.email,
