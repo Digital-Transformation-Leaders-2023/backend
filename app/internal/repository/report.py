@@ -123,7 +123,9 @@ class ReportRepository:
         ))
 
         rows['list'] = [k for k in rows['list'] if self.__predicate(k, report_filter)]
-        rows['list'] = rows['list'][:report_filter.skip + report_filter.limit]
+        left_bound = report_filter.skip * report_filter.limit
+        right_bound = (report_filter.skip + 1) * report_filter.limit
+        rows['list'] = rows['list'][left_bound:right_bound]
 
         return rows
 
