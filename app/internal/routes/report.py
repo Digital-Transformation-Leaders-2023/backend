@@ -22,7 +22,11 @@ async def create_upload_file(file: UploadFile = File(...)):
 
 
 @router.get('/get_all_files')
-async def get_all_files(limit: int = 10, skip: int = 0, is_favorite: bool = False):
+async def get_all_files(
+        limit: int = 10,
+        skip: int = 0,
+        is_favorite: bool = False
+):
     return report_repository.get_all_files(limit, skip, is_favorite)
 
 
@@ -31,8 +35,8 @@ async def get_by_document_id(
         document_id: str,
         skip: int,
         limit: int,
-        sort_dir: Optional[str],
-        sort_column: Optional[str],
+        sort_dir: Optional[str] = None,
+        sort_column: Optional[str] = None,
 ):
     return report_repository.get_file_by_id(document_id, ReportFilter(
         limit=limit,
