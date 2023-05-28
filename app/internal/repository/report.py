@@ -61,6 +61,19 @@ class ReportRepository:
 
         self.__report_collection.insert_one(result)
 
+        # ВОТ ТУТ ВАЛИДАЦИЯ!
+        # try:
+        #     # проверить есть ли КОД МКБ-10 в таблице
+        #     with Session(self.__engine) as session:
+        #         query = session.query(MKBTable.code) \
+        #             .filter(~MKBTable.code.in_(data_frame['MKB_code'])) \
+        #             .distinct()
+        #         result = query.all()
+        #         if len(result) > 0:
+        #             print(result)
+        # except:
+        #     raise Exception("Something went wrong with PostgreSql connection")
+
         return report_id
 
     def get_all_files(
