@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.internal.repository.user import UserRepository
-from app.internal.model.user import UserModel, UserCreate, UserResponse, UserSignin
+from app.internal.model.user import UserModel, UserCreate, UserResponse
 from app.pkg.authentication_provider.auth import AuthProvider
+from fastapi.responses import JSONResponse
 
 SECRET_KEY = "fb7e694502a64cadab462ffe062ee5219c70f7b52fcd919ffe6974c608c43c29"
 ALGORITHM = "HS256"
@@ -23,6 +24,9 @@ reuseable_oauth = OAuth2PasswordBearer(
 db = UserRepository()
 auth_provider = AuthProvider()
 
+EMAIL_ALREADY_REGISTERED_RESPONSE = JSONResponse(
+    content={"message": "this email already registered"}, status_code=status.HTTP_409_CONFLICT
+)
 
 class Token(BaseModel):
     access_token: str
@@ -109,6 +113,9 @@ async def create_user(from_data: UserCreate):
         password_hash=auth_provider.get_password_hash(from_data.password),
         email=from_data.email
     )
+    res = db.get_user_by_email(user.email)
+    if res is not None:
+        return EMAIL_ALREADY_REGISTERED_RESPONSE
     db.add_user(user)
 
     access_token_expires = timedelta(minutes=15)
