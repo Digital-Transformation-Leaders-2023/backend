@@ -125,7 +125,7 @@ class ReportRepository:
         rows['list'] = [k for k in rows['list'] if self.__predicate(k, report_filter)]
         rows_with_limit = rows['list'][:report_filter.skip + report_filter.limit]
 
-        return rows
+        return rows_with_limit
 
     def set_favorite_by_file_id(self, document_id: str, is_favorite: bool):
         query = {"id": document_id}
