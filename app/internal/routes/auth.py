@@ -33,6 +33,7 @@ ACCESS_TOKEN_EXPIRES = timedelta(minutes=30)
 class Token(BaseModel):
     access_token: str
     token_type: str
+    expiration_time_in_minutes: timedelta
 
 
 class TokenData(BaseModel):
