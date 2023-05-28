@@ -33,7 +33,7 @@ ACCESS_TOKEN_EXPIRES = timedelta(minutes=30)
 class Token(BaseModel):
     access_token: str
     token_type: str
-    expiration_time_in_minutes: timedelta
+    expiration_time: timedelta
 
 
 class TokenData(BaseModel):
@@ -106,7 +106,7 @@ async def login(from_data: OAuth2PasswordRequestForm = Depends()):
     access_token = create_access_token(
         data={"sub": user.name}, expires_delta=ACCESS_TOKEN_EXPIRES)
     return {
-        "expiration_time_in_minutes": ACCESS_TOKEN_EXPIRES,
+        "expiration_time": ACCESS_TOKEN_EXPIRES,
         "access_token": access_token,
         "token_type": "bearer"
     }
@@ -127,7 +127,7 @@ async def create_user(from_data: UserCreate):
     access_token = create_access_token(
         data={"sub": from_data.username}, expires_delta=ACCESS_TOKEN_EXPIRES)
     return {
-        "expiration_time_in_minutes": ACCESS_TOKEN_EXPIRES,
+        "expiration_time": ACCESS_TOKEN_EXPIRES,
         "access_token": access_token,
         "token_type": "bearer"
     }
