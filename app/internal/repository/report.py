@@ -79,7 +79,7 @@ class ReportRepository:
     def get_all_files(
             self,
             limit: int = 10,
-            skip: int = 0,
+            skip: int = 1,
             is_favorite: bool = False,
             fiter: ReportFilter = ReportFilter()
     ):
