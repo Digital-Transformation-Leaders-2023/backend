@@ -74,8 +74,10 @@ class ReportRepository:
         table_rows = []
 
         collection = self.__report_collection
-        files_in_collection = [json.loads(json_util.dumps(doc, ensure_ascii=False))
-                               for doc in collection.find()][skip: skip + limit]
+        files = [json.loads(json_util.dumps(doc, ensure_ascii=False))
+                 for doc in collection.find()]
+
+        files_in_collection = files[skip: skip + limit]
 
         if files_in_collection:
             table_rows.extend(files_in_collection)
@@ -86,7 +88,7 @@ class ReportRepository:
                 filtered_rows.append(row)
 
         result['reports'] = filtered_rows
-        result['total_files'] = len(files_in_collection)
+        result['total_files'] = len(files)
 
         return result
 
