@@ -8,6 +8,7 @@ from app.internal.repository.user import UserRepository
 from app.internal.model.user import UserModel, UserCreate, UserResponse
 from app.pkg.authentication_provider.auth import AuthProvider
 from fastapi.responses import JSONResponse
+import json
 
 SECRET_KEY = "fb7e694502a64cadab462ffe062ee5219c70f7b52fcd919ffe6974c608c43c29"
 ALGORITHM = "HS256"
@@ -135,7 +136,8 @@ async def create_user(from_data: UserCreate):
 
 @router.get('/me', summary="Get details about user", response_model=UserResponse)
 async def get_me(user: User = Depends(get_current_user)):
+    print(json.dumps(user.__dict__))
     return {
-        "username": user.username,
+        "username": user.user,
         "email": user.email,
     }
