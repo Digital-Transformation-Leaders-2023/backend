@@ -34,9 +34,7 @@ async def get_all_files(
 async def get_by_document_id(
         document_id: str,
         skip: int,
-        limit: int,
-        sort_dir: Optional[str] = None,
-        sort_column: Optional[str] = None,
+        limit: int
 ):
     return report_repository.get_file_by_id(document_id, ReportFilter(
         limit=limit,
