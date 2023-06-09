@@ -62,6 +62,7 @@ class ReportRepository:
 
         result = {}
         result['id'] = report_id
+        result['name'] = file_name
         result['date'] = datetime.now()
         result['total'] = data_frame.shape[0]
         result['list'] = records
@@ -154,6 +155,13 @@ class ReportRepository:
     def set_favorite_by_file_id(self, document_id: str, is_favorite: bool):
         query = {"id": document_id}
         new_values = {"$set": {"is_favorite": is_favorite}}
+        return self.__report_collection.update_one(query, new_values)
+
+    def set_name_by_file_id(self, document_id: str, new_name: str):
+        if len(new_name) == 0:
+            raise ValueError("File name can't be null")
+        query = {"id": document_id}
+        new_values = {"$set": {"name": new_name}}
         return self.__report_collection.update_one(query, new_values)
 
     def insert_MKB_table(self, file_data: bytes):

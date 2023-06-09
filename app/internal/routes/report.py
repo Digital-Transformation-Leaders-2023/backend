@@ -61,6 +61,12 @@ async def set_favorite_by_file_id(document_id: str, is_favorite: bool):
     return {"file_id": document_id, "message": "Success, is_favorite field correctly changed"}
 
 
+@router.post("/set_name_by_file_id/{document_id}")
+async def set_favorite_by_file_id(document_id: str, new_name: str):
+    report_repository.set_name_by_file_id(document_id, new_name)
+    return {"file_id": document_id, "message": "Success, name field correctly changed"}
+
+
 @router.post("/upload_mkb_table/")
 async def insert_MKB_table(file: UploadFile = File(...)):
     contents = await file.read()
