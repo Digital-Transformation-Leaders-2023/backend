@@ -82,4 +82,14 @@ async def upload_service_code_table(file: UploadFile = File(...)):
 @router.post("/upload_treatment_course_table/")
 async def insert_treatment_course_table(file: UploadFile = File(...)):
     contents = await file.read()
-    return report_repository.insert_treatment_course_table(contents)
+    return report_repository.insert_treatment_course_table(contents) \
+
+
+@router.get("/get_accuracy_by_file_id/{document_id}")
+async def get_accuracy_by_file_id(document_id: str):
+    return report_repository.get_accuracy_by_file_id(document_id)
+
+
+@router.get("/get_stats_by_file_id/{document_id}")
+async def get_stats_by_file_id(document_id: str):
+    return report_repository.get_stats_by_file_id(document_id)
