@@ -240,6 +240,7 @@ class ReportRepository:
         stats = []
         for row in rows['list']:
             stats.append({
+                "patient_id" : row["patient_id"],
                 "sex": row['patient_gender'],
                 "age": row['date_of_patient_birth']
             })
