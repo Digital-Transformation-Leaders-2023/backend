@@ -214,3 +214,34 @@ class ReportRepository:
             return {"message": "TreatmentCourse correctly add in base"}
         except Exception as error:
             raise error
+
+    def get_accuracy_by_file_id(self, document_id: str):
+        rows = json.loads(json_util.dumps(
+            self.__report_collection.find_one({'id': document_id}),
+            ensure_ascii=False
+        ))
+
+        if len(rows) == 0:
+            raise Exception(f"Count of rows by {document_id} document id doesn't exist")
+        acc = []
+        for row in rows['list']:
+            acc.append(row['accuracy'])
+
+        return acc
+
+    def get_stats_by_file_id(self, document_id: str):
+        rows = json.loads(json_util.dumps(
+            self.__report_collection.find_one({'id': document_id}),
+            ensure_ascii=False
+        ))
+
+        if len(rows) == 0:
+            raise Exception(f"Count of rows by {document_id} document id doesn't exist")
+        stats = []
+        for row in rows['list']:
+            stats.append({
+                "sex": row['patient_gender'],
+                "age": row['date_of_patient_birth']
+            })
+
+        return stats
