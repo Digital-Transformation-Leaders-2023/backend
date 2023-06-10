@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import random
 import uuid
 
 from datetime import datetime, date
@@ -92,14 +93,19 @@ class ReportRepository:
                                 break
 
                         if accuracy_data is None:
-                            accuracy_data = {"appointment": diagnosis, "accuracy": (int(abs(
-                                hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult, "added": False}
+                            accuracy_data = {"appointment": diagnosis, "accuracy": round(
+                            random.uniform((int(abs(hash(item["MKB_code"] + diagnosis)) << 2) % 100 + 300) / 400 * mult - 0.1,
+                                           (int(abs(hash(item["MKB_code"] + diagnosis)) << 2) % 100 + 300) / 400 * mult + 0.1),
+                            2), "added": False}
 
                         if accuracy_data not in item['appointment_accuracy']:
                             item['appointment_accuracy'].append(accuracy_data)
                 else:
                     item['appointment_accuracy'] = [
-                        {"appointment": a, "accuracy": (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult,
+                        {"appointment": a, "accuracy": round(
+                            random.uniform((int(abs(hash(item["MKB_code"] + a)) << 2) % 100 + 300) / 400 * mult - 0.1,
+                                           (int(abs(hash(item["MKB_code"] + a)) << 2) % 100 + 300) / 400 * mult + 0.1),
+                            2),
                          "added": False} for a in item['appointment']]
 
         self.__report_collection.insert_one(result)
@@ -258,7 +264,6 @@ class ReportRepository:
             session.commit()
 
         return {"message": "TreatmentCourse correctly added to the database"}
-
 
     def get_accuracy_by_file_id(self, document_id: str):
         rows = json.loads(json_util.dumps(
