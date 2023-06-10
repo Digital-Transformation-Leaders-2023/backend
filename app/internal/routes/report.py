@@ -37,8 +37,7 @@ async def get_by_document_id(
         document_id: str,
         skip: int = 1,
         limit: int = 100,
-        min_age: Optional[int] = None,
-        max_age: Optional[int] = None,
+        age: Optional[str] = None,
         sex: Optional[str] = None,  # male female
         mkb_code: Optional[str] = None,
         sort_dir: Optional[str] = None,
@@ -48,8 +47,7 @@ async def get_by_document_id(
     return report_repository.get_file_by_id(document_id, ReportFilter(
         limit=limit,
         skip=skip,
-        min_age=min_age,
-        max_age=max_age,
+        age=age,
         sex=sex,
         mkb_code=mkb_code,
     ))

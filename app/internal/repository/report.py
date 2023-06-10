@@ -137,12 +137,29 @@ class ReportRepository:
 
     @staticmethod
     def __predicate(key, fltr: ReportFilter):
-        # age = date.today().year - date(key["date_of_patient_birth"]).year
+        dt = key['date_of_patient_birth'].strip()
+        age = date.today().year - datetime.strptime(dt, '%d.%m.%Y').year
+
         if key["patient_gender"] != fltr.sex and fltr.sex is not None:
             return False
         if key["MKB_code"] != fltr.mkb_code and fltr.mkb_code is not None:
             return False
-        return True
+
+        if fltr.age is not None:
+            age_filter = str(fltr.age).split(sep=",")
+        else:
+            return True
+
+        if "Young" in age_filter and age < 18:
+            return True
+
+        if "Mature" in age_filter and 18 <= age <= 45:
+            return True
+
+        if "Old" in age_filter and age > 45:
+            return True
+
+        return False
 
     def get_file_by_id(self, document_id: str, report_filter: ReportFilter):
         rows = json.loads(json_util.dumps(
