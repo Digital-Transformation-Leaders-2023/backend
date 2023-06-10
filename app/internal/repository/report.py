@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import uuid
+from sqlalchemy import select, insert
 
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -60,13 +61,8 @@ class ReportRepository:
         report_id = uuid.uuid4()
         report_id = str(report_id)
 
-        result = {}
-        result['id'] = report_id
-        result['name'] = file_name
-        result['date'] = datetime.now()
-        result['total'] = data_frame.shape[0]
-        result['list'] = records
-        result['is_favorite'] = False
+        result = {'id': report_id, 'name': file_name, 'date': datetime.now(), 'total': data_frame.shape[0],
+                  'list': records, 'is_favorite': False}
 
         for item in result['list']:
             rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
@@ -199,21 +195,47 @@ class ReportRepository:
             raise error
 
     def insert_treatment_course_table(self, file_data: bytes):
-        fieldnames = ["code", "description"]
+        fieldnames = ["mkb", "service code", "Average delivery frequency", "Average rate of application frequency"]
         reader = reader_simplify(
             file_data=file_data,
             fieldnames=fieldnames,
             sep=','
         )
         rows = list(reader)
+
         try:
             with Session(self.__engine) as session:
-                session.bulk_insert_mappings(TreatmentCourse, rows)
+                for row in rows:
+                    mkb_code = row["mkb"]
+                    service_code = row["service code"]
+
+                    mkb = session.query(MKBTable).filter_by(code=mkb_code).first()
+                    print(mkb.code)
+                    if mkb.code is None:
+                        mkb = MKBTable(code=mkb_code)
+                        session.add(mkb)
+                        session.flush()
+
+                    service_code_table = session.query(ServiceCodeTable).filter_by(code=service_code).first()
+                    print(service_code_table.code)
+                    if service_code_table.code is None:
+                        service_code_table = ServiceCodeTable(code=service_code)
+                        session.add(service_code_table)
+                        session.flush()
+
+                    treatment_course = TreatmentCourse(
+                        mkb=mkb,
+                        service_code=service_code_table,
+                        weight=row["Average delivery frequency"]
+                    )
+                    session.add(treatment_course)
+
                 session.commit()
-                session.close()
-            return {"message": "TreatmentCourse correctly add in base"}
+
+            return {"message": "TreatmentCourse correctly added to the database"}
         except Exception as error:
             raise error
+
 
     def get_accuracy_by_file_id(self, document_id: str):
         rows = json.loads(json_util.dumps(
