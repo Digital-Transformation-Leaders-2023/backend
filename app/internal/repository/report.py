@@ -259,20 +259,18 @@ class ReportRepository:
 
         return {"message": "TreatmentCourse correctly added to the database"}
 
-
     def get_accuracy_by_file_id(self, document_id: str):
         rows = json.loads(json_util.dumps(
             self.__report_collection.find_one({'id': document_id}),
             ensure_ascii=False
         ))
 
-
         if len(rows) == 0:
             raise Exception(f"Count of rows by {document_id} document id doesn't exist")
         acc = []
         for row in rows['list']:
             appointment_accuracy = row['appointment_accuracy']
-            acc.append(appointment_accuracy['accuracy'])
+            acc.append(appointment_accuracy)
 
         return acc
 
