@@ -13,10 +13,6 @@ from app.internal.repository.mkb import MkbRepository
 from bson import json_util
 from pandas import DataFrame
 
-import random
-
-from datetime import date
-
 from app.internal.repository import mongo_db_client, engine
 
 database_name = "reports"
@@ -47,11 +43,9 @@ class ReportRepository:
             'Пол пациента': 'patient_gender',
         })
 
-        # создаем директорию "files", если ее нет
         if not os.path.exists('files'):
             os.makedirs('files')
 
-        # сохраняем файл в директорию "files" с помощью Pandas
         file_name = os.path.join('files', file_name)
         data_frame.to_excel(file_name, index=False)
 
@@ -60,13 +54,8 @@ class ReportRepository:
         report_id = uuid.uuid4()
         report_id = str(report_id)
 
-        result = {}
-        result['id'] = report_id
-        result['name'] = file_name
-        result['date'] = datetime.now()
-        result['total'] = data_frame.shape[0]
-        result['list'] = records
-        result['is_favorite'] = False
+        result = {'id': report_id, 'name': file_name, 'date': datetime.now(), 'total': data_frame.shape[0],
+                  'list': records, 'is_favorite': False}
 
         dict = {}
 
@@ -76,39 +65,35 @@ class ReportRepository:
             else:
                 dict[item["MKB_code"] + item["diagnosis"]] = 1.1
 
-        for item in result['list']:
-            rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
-            item['accuracy'] = 0
-            mult = 1 - (1 / dict[item["MKB_code"] + item["diagnosis"]])
-            if rsl is not None:
-                required_courses = [item2.service_code for item2 in rsl.courses]
-                # required_courses_desc = [item.description for item in required_courses]
-                for course in required_courses:
-                    if item['diagnosis'] == course.description:
-                        item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
-                    else:
-                        item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
+        i = 0
+        with Session(self.__engine) as session:
+            for item in result['list']:
+                i = i + 1
+                rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
+                item['appointment'] = list(filter(None, item['appointment'].split("\n")))
+                print(i)
+                print(item['appointment'])
+                print(len(item['appointment']))
+                item['appointment_accuracy'] = []
+                mult = 1 - (1 / dict[item["MKB_code"] + item["diagnosis"]])
+                if rsl is not None:
+                    required_courses = [item2.service_code for item2 in rsl.courses]
+                    for idx, diagnosis in enumerate(item['appointment']):
+                        for course in required_courses:
+                            if diagnosis == course.description:
+                                weight_query = session.query(TreatmentCourse.weight).filter_by(mkb_id=rsl.id,
+                                                                                               service_code_id=course.id).first()
+                                if weight_query is not None:
+                                    accuracy = weight_query[0]
+                                else:
+                                    accuracy = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
+                                item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": accuracy, "added": True})
+                            else:
+                                item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult, "added": False})
                 else:
-                    item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
-                print(item["MKB_code"], rsl.courses)
-            else:
-                item['accuracy'] = 0.5
-            # item['accuracy'] = random.random()
+                    item['appointment_accuracy'] = [{"appointment": a, "accuracy": (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult, "added": False} for a in item['appointment']]
 
         self.__report_collection.insert_one(result)
-
-        # ВОТ ТУТ ВАЛИДАЦИЯ!
-        # try:
-        #     # проверить есть ли КОД МКБ-10 в таблице
-        #     with Session(self.__engine) as session:
-        #         query = session.query(MKBTable.code) \
-        #             .filter(~MKBTable.code.in_(data_frame['MKB_code'])) \
-        #             .distinct()
-        #         result = query.all()
-        #         if len(result) > 0:
-        #             print(result)
-        # except:
-        #     raise Exception("Something went wrong with PostgreSql connection")
 
         return report_id
 
@@ -227,21 +212,44 @@ class ReportRepository:
             raise error
 
     def insert_treatment_course_table(self, file_data: bytes):
-        fieldnames = ["code", "description"]
+        fieldnames = ["array"]
         reader = reader_simplify(
             file_data=file_data,
             fieldnames=fieldnames,
-            sep=','
+            sep=';'
         )
         rows = list(reader)
-        try:
-            with Session(self.__engine) as session:
-                session.bulk_insert_mappings(TreatmentCourse, rows)
-                session.commit()
-                session.close()
-            return {"message": "TreatmentCourse correctly add in base"}
-        except Exception as error:
-            raise error
+        i = 0
+
+        with Session(self.__engine) as session:
+            for row in rows:
+                mkb_code = row["array"].split()
+
+                if mkb_code is None:
+                    break
+                mkb = session.query(MKBTable).filter_by(code=mkb_code[0]).first()
+                if mkb is None:
+                    mkb = MKBTable(code=mkb_code)
+                    session.add(mkb)
+                    session.flush()
+
+                service_code_table = session.query(ServiceCodeTable).filter_by(code=mkb_code[1]).first()
+                if service_code_table is None:
+                    service_code_table = ServiceCodeTable(code=mkb_code[1])
+                    session.add(service_code_table)
+                    session.flush()
+
+                treatment_course = TreatmentCourse(
+                    mkb=mkb,
+                    service_code=service_code_table,
+                    weight=float(mkb_code[2].replace(",", "."))
+                )
+                session.add(treatment_course)
+
+            session.commit()
+
+        return {"message": "TreatmentCourse correctly added to the database"}
+
 
     def get_accuracy_by_file_id(self, document_id: str):
         rows = json.loads(json_util.dumps(
