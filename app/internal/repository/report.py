@@ -266,11 +266,13 @@ class ReportRepository:
             ensure_ascii=False
         ))
 
+
         if len(rows) == 0:
             raise Exception(f"Count of rows by {document_id} document id doesn't exist")
         acc = []
         for row in rows['list']:
-            acc.append(row['accuracy'])
+            appointment_accuracy = row['appointment_accuracy']
+            acc.append(appointment_accuracy['accuracy'])
 
         return acc
 
