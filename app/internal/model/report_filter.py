@@ -6,7 +6,8 @@ from typing import Optional
 class ReportFilter:
     limit: int = 10
     skip: int = 1
-    age: Optional[str] = None
+    min_age: Optional[int] = None
+    max_age: Optional[int] = None
     sex: Optional[str] = None
     mkb_code: Optional[str] = None
     sort_dir: Optional[str] = None

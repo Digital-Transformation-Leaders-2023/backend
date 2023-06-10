@@ -152,7 +152,7 @@ class ReportRepository:
             return False
 
         if fltr.age is not None:
-            age_filter = json.loads(fltr.age)
+            age_filter = str(fltr.age).split(sep=",")
         else:
             return True
 
