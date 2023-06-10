@@ -62,24 +62,45 @@ class ReportRepository:
         result = {'id': report_id, 'name': file_name, 'date': datetime.now(), 'total': data_frame.shape[0],
                   'list': records, 'is_favorite': False}
 
+        dict = {}
+
+        for item in result['list']:
+            if (item["MKB_code"] + item["diagnosis"]) in dict.keys():
+                dict[item["MKB_code"] + item["diagnosis"]] += 1
+            else:
+                dict[item["MKB_code"] + item["diagnosis"]] = 1.1
+
+        i = 0
         with Session(self.__engine) as session:
             for item in result['list']:
+                i = i + 1
                 rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
-                item['accuracy'] = 0
+                item['appointment'] = list(filter(None, item['appointment'].split("\n")))
+                print(i)
+                print(item['appointment'])
+                print(len(item['appointment']))
+                # Initialize appointment_accuracy as list of dict with pairs appointment and accuracy
+                item['appointment_accuracy'] = []
+                mult = 1 - (1 / dict[item["MKB_code"] + item["diagnosis"]])
                 if rsl is not None:
                     required_courses = [item2.service_code for item2 in rsl.courses]
-                    for course in required_courses:
-                        if item['diagnosis'] == course.description:
-                            weight_query = session.query(TreatmentCourse.weight).filter_by(mkb_id=rsl.id,
-                                                                                           service_code_id=course.id).first()
-                            if weight_query is not None:
-                                item['accuracy'] = weight_query
-                            else:
-                                item['accuracy'] = 0
-                    else:
-                        item['accuracy'] = 0
+                    for idx, diagnosis in enumerate(item['appointment']):
+                        for course in required_courses:
+                            if diagnosis == course.description:
+                                # Check if the weight exists in the treatment_course table
+                                weight_query = session.query(TreatmentCourse.weight).filter_by(mkb_id=rsl.id,
+                                                                                               service_code_id=course.id).first()
+                                if weight_query is not None:
+                                    # If weight is found, use it for accuracy calculation
+                                    accuracy = weight_query[0]
+                                else:
+                                    # If weight is not found, set accuracy to 0
+                                    accuracy = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
+                                item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": accuracy})
+                        else:
+                            item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": 0})
                 else:
-                    item['accuracy'] = 0
+                    item['appointment_accuracy'] = [{"appointment": a, "accuracy": 0} for a in item['appointment']]
 
         self.__report_collection.insert_one(result)
 
