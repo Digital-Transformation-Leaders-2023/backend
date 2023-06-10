@@ -79,6 +79,7 @@ class ReportRepository:
                 if rsl is not None:
                     required_courses = [item2.service_code for item2 in rsl.courses]
                     for idx, diagnosis in enumerate(item['appointment']):
+                        accuracy_data = None
                         for course in required_courses:
                             if diagnosis == course.description:
                                 weight_query = session.query(TreatmentCourse.weight).filter_by(mkb_id=rsl.id,
@@ -87,11 +88,19 @@ class ReportRepository:
                                     accuracy = weight_query[0]
                                 else:
                                     accuracy = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
-                                item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": accuracy, "added": True})
-                            else:
-                                item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult, "added": False})
+                                accuracy_data = {"appointment": diagnosis, "accuracy": accuracy, "added": True}
+                                break
+
+                        if accuracy_data is None:
+                            accuracy_data = {"appointment": diagnosis, "accuracy": (int(abs(
+                                hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult, "added": False}
+
+                        if accuracy_data not in item['appointment_accuracy']:
+                            item['appointment_accuracy'].append(accuracy_data)
                 else:
-                    item['appointment_accuracy'] = [{"appointment": a, "accuracy": (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult, "added": False} for a in item['appointment']]
+                    item['appointment_accuracy'] = [
+                        {"appointment": a, "accuracy": (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult,
+                         "added": False} for a in item['appointment']]
 
         self.__report_collection.insert_one(result)
 
