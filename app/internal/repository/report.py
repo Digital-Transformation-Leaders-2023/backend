@@ -68,18 +68,29 @@ class ReportRepository:
         result['list'] = records
         result['is_favorite'] = False
 
+        dict = {}
+
+        for item in result['list']:
+            if (item["MKB_code"] + item["diagnosis"]) in dict.keys():
+                dict[item["MKB_code"] + item["diagnosis"]] += 1
+            else:
+                dict[item["MKB_code"] + item["diagnosis"]] = 1.1
+
         for item in result['list']:
             rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
             item['accuracy'] = 0
+            mult = 1 - (1 / dict[item["MKB_code"] + item["diagnosis"]])
             if rsl is not None:
                 required_courses = [item2.service_code for item2 in rsl.courses]
                 # required_courses_desc = [item.description for item in required_courses]
                 for course in required_courses:
                     if item['diagnosis'] == course.description:
-                        item['accuracy'] = course.weight
+                        item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
                     else:
-                        item['accuracy'] = 0
-                print(item["MKB_code"], [item.description for item in required_courses])
+                        item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
+                else:
+                    item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
+                print(item["MKB_code"], rsl.courses)
             else:
                 item['accuracy'] = 0.5
             # item['accuracy'] = random.random()
