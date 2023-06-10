@@ -2,7 +2,6 @@ import csv
 import json
 import os
 import uuid
-from sqlalchemy import select, insert
 
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -13,10 +12,6 @@ from app.internal.repository.mkb import MkbRepository
 
 from bson import json_util
 from pandas import DataFrame
-
-import random
-
-from datetime import date
 
 from app.internal.repository import mongo_db_client, engine
 
@@ -79,7 +74,6 @@ class ReportRepository:
                 print(i)
                 print(item['appointment'])
                 print(len(item['appointment']))
-                # Initialize appointment_accuracy as list of dict with pairs appointment and accuracy
                 item['appointment_accuracy'] = []
                 mult = 1 - (1 / dict[item["MKB_code"] + item["diagnosis"]])
                 if rsl is not None:
@@ -87,20 +81,17 @@ class ReportRepository:
                     for idx, diagnosis in enumerate(item['appointment']):
                         for course in required_courses:
                             if diagnosis == course.description:
-                                # Check if the weight exists in the treatment_course table
                                 weight_query = session.query(TreatmentCourse.weight).filter_by(mkb_id=rsl.id,
                                                                                                service_code_id=course.id).first()
                                 if weight_query is not None:
-                                    # If weight is found, use it for accuracy calculation
                                     accuracy = weight_query[0]
                                 else:
-                                    # If weight is not found, set accuracy to 0
                                     accuracy = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
-                                item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": accuracy})
-                        else:
-                            item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": 0})
+                                item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": accuracy, "added": True})
+                            else:
+                                item['appointment_accuracy'].append({"appointment": diagnosis, "accuracy": (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult, "added": False})
                 else:
-                    item['appointment_accuracy'] = [{"appointment": a, "accuracy": 0} for a in item['appointment']]
+                    item['appointment_accuracy'] = [{"appointment": a, "accuracy": (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult, "added": False} for a in item['appointment']]
 
         self.__report_collection.insert_one(result)
 
