@@ -48,11 +48,9 @@ class ReportRepository:
             'Пол пациента': 'patient_gender',
         })
 
-        # создаем директорию "files", если ее нет
         if not os.path.exists('files'):
             os.makedirs('files')
 
-        # сохраняем файл в директорию "files" с помощью Pandas
         file_name = os.path.join('files', file_name)
         data_frame.to_excel(file_name, index=False)
 
@@ -72,24 +70,25 @@ class ReportRepository:
             else:
                 dict[item["MKB_code"] + item["diagnosis"]] = 1.1
 
-        for item in result['list']:
-            rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
-            item['accuracy'] = 0
-            mult = 1 - (1 / dict[item["MKB_code"] + item["diagnosis"]])
-            if rsl is not None:
-                required_courses = [item2.service_code for item2 in rsl.courses]
-                # required_courses_desc = [item.description for item in required_courses]
-                for course in required_courses:
-                    if item['diagnosis'] == course.description:
-                        item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
-                    else:
-                        item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
+        with Session(self.__engine) as session:
+            for item in result['list']:
+                rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
+                item['accuracy'] = 0
+                mult = 1 - (1 / dict[item["MKB_code"] + item["diagnosis"]])
+                if rsl is not None:
+                    required_courses = [item2.service_code for item2 in rsl.courses]
+                    for course in required_courses:
+                        if item['diagnosis'] == course.description:
+                            weight_query = session.query(TreatmentCourse.weight).filter_by(mkb_id=rsl.id,
+                                                                                           service_code_id=course.id).first()
+                            if weight_query is not None:
+                                item['accuracy'] = weight_query[0] * mult
+                            else:
+                                item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
+                        else:
+                            item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
                 else:
-                    item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
-                print(item["MKB_code"], rsl.courses)
-            else:
-                item['accuracy'] = 0.5
-            # item['accuracy'] = random.random()
+                    item['accuracy'] = 0.5
 
         self.__report_collection.insert_one(result)
 
