@@ -62,19 +62,10 @@ class ReportRepository:
         result = {'id': report_id, 'name': file_name, 'date': datetime.now(), 'total': data_frame.shape[0],
                   'list': records, 'is_favorite': False}
 
-        dict = {}
-
-        for item in result['list']:
-            if (item["MKB_code"] + item["diagnosis"]) in dict.keys():
-                dict[item["MKB_code"] + item["diagnosis"]] += 1
-            else:
-                dict[item["MKB_code"] + item["diagnosis"]] = 1.1
-
         with Session(self.__engine) as session:
             for item in result['list']:
                 rsl = mkb_repository.GetMkbWithServicesCodes(item["MKB_code"])
                 item['accuracy'] = 0
-                mult = 1 - (1 / dict[item["MKB_code"] + item["diagnosis"]])
                 if rsl is not None:
                     required_courses = [item2.service_code for item2 in rsl.courses]
                     for course in required_courses:
@@ -82,13 +73,13 @@ class ReportRepository:
                             weight_query = session.query(TreatmentCourse.weight).filter_by(mkb_id=rsl.id,
                                                                                            service_code_id=course.id).first()
                             if weight_query is not None:
-                                item['accuracy'] = weight_query[0] * mult
+                                item['accuracy'] = weight_query
                             else:
-                                item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
-                        else:
-                            item['accuracy'] = (int(abs(hash(item["MKB_code"])) << 2) % 100 + 300) / 400 * mult
+                                item['accuracy'] = 0
+                    else:
+                        item['accuracy'] = 0
                 else:
-                    item['accuracy'] = 0.5
+                    item['accuracy'] = 0
 
         self.__report_collection.insert_one(result)
 
